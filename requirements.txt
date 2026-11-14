@@ -1,1 +1,5 @@
-# Documentation-only starter; pin runtime dependencies after selecting the simulation stack.
+numpy==2.4.6
+pandas==3.1.1
+matplotlib==3.11.2
+scikit-learn==1.9.1
+cryptography==50.0.2
