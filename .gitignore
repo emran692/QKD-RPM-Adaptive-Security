@@ -11,3 +11,7 @@ results/*
 data/physionet_ptt/csv/*.csv
 data/physionet_ptt/processed/*.csv
 data/synthetic_rpm/*.csv
+# Local backups and generated file inventory
+project_backups/
+python_file_list.txt
+src/adaptive_controller_v5_before_logging_update.py

@@ -149,9 +149,18 @@ def load_data():
 
 def generate_key_schedule(controller):
 
-    rekey_rows = controller[
-        controller["rekey_event"].astype(int) == 1
-    ].copy()
+    # A rekey attempt is not necessarily a successful key establishment.
+    # Prefer the explicit success flag emitted by the updated controller;
+    # retain a safe compatibility fallback for older result CSVs.
+    attempted = controller[controller["rekey_event"].astype(int) == 1].copy()
+    if "rekey_success" in attempted.columns:
+        rekey_rows = attempted[attempted["rekey_success"].astype(int) == 1].copy()
+    else:
+        valid_sources = {"SIMULATED_QKD_POOL", "SIMULATED_PQC"}
+        rekey_rows = attempted[
+            attempted["key_source"].astype(str).isin(valid_sources)
+            & (pd.to_numeric(attempted["session_key_epoch"], errors="coerce") > 0)
+        ].copy()
 
     rekey_rows = rekey_rows.sort_values("time_seconds")
 
@@ -174,7 +183,7 @@ def generate_key_schedule(controller):
             "SIMULATED_PQC"
         ):
             raise ValueError(
-                f"Unexpected key source: {source}"
+                f"Unexpected key source in successful rekey: {source}"
             )
 
         if epoch <= 0:
@@ -885,6 +894,13 @@ def main():
         )
 
     print("\n========================================\n")
+
+    if not (
+        summary["all_packets_verified"]
+        and summary["all_round_trip_verified"]
+        and all_integrity_tests_passed
+    ):
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

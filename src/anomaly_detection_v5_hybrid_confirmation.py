@@ -104,19 +104,29 @@ def fit_and_score_isolation_forest(qkd_df):
 
 
 def evaluate_anomaly_model(scored):
+    # Evaluate only observations outside the normal-baseline training window.
+    # The degradation interval remains the synthetic ground-truth scenario
+    # defined above; this is not a labelled real-world attack dataset.
+    training_mask = (
+        (scored["time_seconds"] >= TRAIN_START)
+        & (scored["time_seconds"] < TRAIN_END_EXCLUSIVE)
+    )
+    evaluation = scored.loc[~training_mask].copy()
+    if evaluation.empty:
+        raise ValueError("No held-out observations available for evaluation.")
+
     actual = (
-        (scored["time_seconds"] >= DEGRADED_START)
-        & (scored["time_seconds"] < DEGRADED_END_EXCLUSIVE)
+        (evaluation["time_seconds"] >= DEGRADED_START)
+        & (evaluation["time_seconds"] < DEGRADED_END_EXCLUSIVE)
     ).astype(int)
-    predicted = scored["anomaly_prediction"].astype(int)
+    predicted = evaluation["anomaly_prediction"].astype(int)
     cm = confusion_matrix(actual, predicted, labels=[0, 1])
 
     metrics = {
-        "total_samples": int(len(scored)),
-        "training_samples": int(
-            ((scored["time_seconds"] >= TRAIN_START)
-             & (scored["time_seconds"] < TRAIN_END_EXCLUSIVE)).sum()
-        ),
+        "total_samples": int(len(evaluation)),
+        "excluded_training_samples": int(training_mask.sum()),
+        "evaluation_start_time": float(evaluation["time_seconds"].min()),
+        "evaluation_end_time": float(evaluation["time_seconds"].max()),
         "detected_anomalies": int(predicted.sum()),
         "true_negatives": int(cm[0, 0]),
         "false_positives": int(cm[0, 1]),
@@ -168,6 +178,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
     results, events = [], []
 
     total_generated = total_consumed = total_discarded = 0
+    background_qkd_bits_accepted = 0
     qkd_successful_rekeys = qkd_failed_rekeys = pqc_successful_rekeys = 0
     fallback_activations = recovery_events = 0
     session_key_epoch = 0
@@ -263,11 +274,23 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
         total_generated += generated
         accepted = discarded = 0
 
-        if mode == "QKD":
+        # Background QKD replenishment is permitted during PQC fallback only
+        # while the simulator reports a normal channel and QBER is within the
+        # recovery threshold. The bits are not consumed until mode recovery.
+        channel_is_healthy = (
+            str(row["channel_status"]).strip().upper() == "NORMAL"
+            and qber <= v5.QBER_RECOVERY_THRESHOLD
+        )
+        may_replenish = mode == "QKD" or (
+            mode == "PQC_FALLBACK" and channel_is_healthy
+        )
+        if may_replenish:
             available_space = v5.MAX_POOL_BITS - pool
             accepted = min(generated, available_space)
             discarded = generated - accepted
             pool += accepted
+            if mode == "PQC_FALLBACK":
+                background_qkd_bits_accepted += accepted
         else:
             discarded = generated
         total_discarded += discarded
@@ -276,6 +299,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
         qkd_rekey = pqc_rekey = rekey_event = 0
         rekey_reason = ""
         key_source = "NONE"
+        rekey_success = 0
 
         if mode_transition:
             rekey_event = 1
@@ -293,6 +317,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
                     qkd_successful_rekeys += 1
                     qkd_rekey = 1
                     key_source = "SIMULATED_QKD_POOL"
+                    rekey_success = 1
                     session_key_epoch += 1
                 else:
                     qkd_shortage = v5.QKD_DEMAND_PER_REKEY - pool
@@ -303,6 +328,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
                 pqc_rekey = 1
                 pqc_successful_rekeys += 1
                 key_source = "SIMULATED_PQC"
+                rekey_success = 1
                 session_key_epoch += 1
             next_rekey_time = t + v5.REKEY_INTERVAL_SECONDS
 
@@ -340,6 +366,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
             "operating_mode": mode,
             "mode_transition": int(mode_transition),
             "rekey_event": rekey_event,
+            "rekey_success": rekey_success,
             "rekey_reason": rekey_reason,
             "key_source": key_source,
             "session_key_epoch": session_key_epoch,
@@ -371,6 +398,7 @@ def run_controller_with_anomaly(qkd_rows, scored_df, if_qber_confirmation_thresh
         "total_generated_bits": total_generated,
         "total_consumed_bits": total_consumed,
         "total_discarded_bits": total_discarded,
+        "background_qkd_bits_accepted_during_fallback": background_qkd_bits_accepted,
         "final_pool_bits": pool,
         "qkd_successful_rekeys": qkd_successful_rekeys,
         "pqc_simulated_successful_rekeys": pqc_successful_rekeys,
