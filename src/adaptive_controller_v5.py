@@ -1,4 +1,4 @@
-
+﻿
 """
 Adaptive QKD/PQC Controller V5
 System-level simulation using rolling QBER monitoring.
@@ -20,6 +20,7 @@ logic follows the existing V4 controller design.
 
 import csv
 import argparse
+import math
 from pathlib import Path
 
 # --------------------------------------------------
@@ -71,6 +72,24 @@ def load_qkd_data(path):
             f"Missing required input columns: {sorted(missing)}"
         )
 
+    previous_time = None
+    for index, row in enumerate(data):
+        try:
+            timestamp = float(row["time_seconds"])
+            qber = float(row["qber"])
+            generated = int(row["generated_key_bits"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid numeric QKD input at row {index + 2}.") from exc
+        if not math.isfinite(timestamp) or not math.isfinite(qber):
+            raise ValueError(f"Non-finite timestamp or QBER at row {index + 2}.")
+        if not 0.0 <= qber <= 1.0:
+            raise ValueError(f"QBER must be between 0 and 1 at row {index + 2}.")
+        if generated < 0:
+            raise ValueError(f"Negative generated key bits at row {index + 2}.")
+        if previous_time is not None and timestamp <= previous_time:
+            raise ValueError("QKD time_seconds must be strictly increasing.")
+        previous_time = timestamp
+
     return data
 
 
@@ -102,6 +121,7 @@ def run_controller(qkd_data):
     total_generated = 0
     total_consumed = 0
     total_discarded = 0
+    background_qkd_bits_accepted = 0
 
     qkd_successful_rekeys = 0
     qkd_failed_rekeys = 0
@@ -143,6 +163,9 @@ def run_controller(qkd_data):
 
         previous_mode = mode
         transition_reason = ""
+
+        # Capture pool before adaptive recovery decision.
+        pool_before_recovery_check = pool
 
         # --------------------------------------------------
         # 1. ADAPTIVE MODE SELECTION
@@ -205,21 +228,32 @@ def run_controller(qkd_data):
         accepted = 0
         discarded = 0
 
-        # Only accept newly generated QKD bits while operating
-        # in QKD mode. Bits generated during fallback are discarded.
-        if mode == "QKD":
+        # Continue replenishing the QKD pool in the background during PQC
+        # fallback, but only when the simulator marks the channel NORMAL and
+        # the instantaneous QBER is within the recovery limit. These bits are
+        # not used for traffic until the controller completes its recovery
+        # persistence checks and switches back to QKD.
+        channel_is_healthy = (
+            str(row["channel_status"]).strip().upper() == "NORMAL"
+            and qber <= QBER_RECOVERY_THRESHOLD
+        )
+        may_replenish = mode == "QKD" or (
+            mode == "PQC_FALLBACK" and channel_is_healthy
+        )
 
+        if may_replenish:
             available_space = MAX_POOL_BITS - pool
-
             accepted = min(generated, available_space)
             discarded = generated - accepted
-
             pool += accepted
-
+            if mode == "PQC_FALLBACK":
+                background_qkd_bits_accepted += accepted
         else:
             discarded = generated
 
         total_discarded += discarded
+        # Capture pool after QKD generation and replenishment.
+        pool_after_generation = pool
 
         # --------------------------------------------------
         # 3. SESSION REKEYING
@@ -234,6 +268,7 @@ def run_controller(qkd_data):
 
         rekey_reason = ""
         key_source = "NONE"
+        rekey_success = 0
 
         # A mode transition takes priority over scheduled rekeying.
         if mode_transition:
@@ -264,6 +299,7 @@ def run_controller(qkd_data):
 
                     qkd_rekey = 1
                     key_source = "SIMULATED_QKD_POOL"
+                    rekey_success = 1
 
                     session_key_epoch += 1
 
@@ -284,9 +320,13 @@ def run_controller(qkd_data):
                 pqc_successful_rekeys += 1
 
                 key_source = "SIMULATED_PQC"
+                rekey_success = 1
                 session_key_epoch += 1
 
             next_rekey_time = t + REKEY_INTERVAL_SECONDS
+
+        # Capture pool after any immediate or scheduled rekey.
+        pool_after_immediate_rekey = pool
 
         # --------------------------------------------------
         # 4. MODE DURATION
@@ -311,8 +351,15 @@ def run_controller(qkd_data):
                     if rolling_qber is not None
                     else ""
                 ),
+                "pool_before_recovery_check": pool_before_recovery_check,
+                "pool_after_generation": pool_after_generation,
+                "pool_after_immediate_rekey": pool_after_immediate_rekey,
                 "key_pool_bits": pool,
+            "pool_before_recovery_check": pool_before_recovery_check,
+            "pool_after_generation": pool_after_generation,
+            "pool_after_immediate_rekey": pool_after_immediate_rekey,
                 "immediate_rekey": rekey_event,
+
                 "key_source": key_source,
             })
 
@@ -335,6 +382,7 @@ def run_controller(qkd_data):
             "mode_transition": int(mode_transition),
 
             "rekey_event": rekey_event,
+            "rekey_success": rekey_success,
             "rekey_reason": rekey_reason,
             "key_source": key_source,
             "session_key_epoch": session_key_epoch,
@@ -391,6 +439,7 @@ def run_controller(qkd_data):
         "total_generated_bits": total_generated,
         "total_consumed_bits": total_consumed,
         "total_discarded_bits": total_discarded,
+        "background_qkd_bits_accepted_during_fallback": background_qkd_bits_accepted,
         "final_pool_bits": pool,
 
         "qkd_successful_rekeys": qkd_successful_rekeys,
@@ -451,6 +500,9 @@ def save_results(results, events, summary, output_prefix):
         "reason",
         "qber",
         "rolling_qber",
+        "pool_before_recovery_check",
+        "pool_after_generation",
+        "pool_after_immediate_rekey",
         "key_pool_bits",
         "immediate_rekey",
         "key_source",

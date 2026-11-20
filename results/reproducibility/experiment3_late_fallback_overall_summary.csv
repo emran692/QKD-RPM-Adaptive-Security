@@ -1,0 +1,3 @@
+controller,fallback_count,original_false_fallback_count,late_fallback_count,genuine_false_fallback_count,missed_degradation_intervals,late_detected_intervals,undetected_intervals
+HYBRID_IF_PERSISTENCE_3,64,4,0,4,0,0,0
+V5_BASELINE,64,5,1,4,1,1,0
