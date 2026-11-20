@@ -4,7 +4,7 @@
 Patient Monitoring Using Hybrid Anomaly Detection and Key-Pool
 Management
 
-**Supervisor:** Dr.Â U. Hariharan\
+**Supervisor:** Dr. U. Hariharan\
 **Team IDs:** 23BAI70692, 23BAI70700\
 **Project status:** Implementation and simulation-based experimental
 evaluation completed
@@ -132,7 +132,21 @@ precomputed summaries.
 
 ## 5. Implemented components
 
-  --------------------------------------------------------------------------------------
+| Component | Implementation |
+|---|---|
+| RPM traffic simulation | `rpm_simulator.py` |
+| QKD key-generation simulation | `qkd_simulator.py` |
+| Key-pool management | `key_pool.py` |
+| Adaptive security controller | `adaptive_controller_v5.py` |
+| Hybrid anomaly detection | `anomaly_detection_v5_hybrid_confirmation.py` |
+| AES-GCM integration and validation | `aes_gcm_integration_v5_roundtrip.py` |
+| PhysioNet preprocessing | `process_physionet.py` |
+| Real-data-derived RPM traffic generation | `real_rpm_generator.py` |
+| Multi-seed robustness experiment | `multi_seed_robustness_v5_hybrid_experiment3.py` |
+| Late-fallback audit | `late_fallback_audit_experiment3.py` |
+| Statistical analysis | `analyze_experiment3_statistics.py` |
+| Regression tests | `tests/test_critical_fixes.py` |
+| Interactive dashboard | `app.py` |
   Component                           Implementation
   ----------------------------------- --------------------------------------------------
   RPM traffic simulation              `rpm_simulator.py`
@@ -169,46 +183,46 @@ actual PQC key exchange, or clinical deployment.
 
 ## 6. Repository structure
 
-``` text
+```text
 QKD-RPM-GitHub/
-â”œâ”€â”€ dashboard_data/
-â”‚   â”œâ”€â”€ aes_gcm_summary.json
-â”‚   â”œâ”€â”€ isolation_forest_v5_metrics.csv
-â”‚   â”œâ”€â”€ qkd_generation_508s_v3.csv
-â”‚   â””â”€â”€ v5_vs_v5_if_comparison.csv
-â”œâ”€â”€ docs/
-â”‚   â”œâ”€â”€ images/
-â”‚   â”‚   â””â”€â”€ dashboard-preview.png
-â”‚   â”œâ”€â”€ architecture.md
-â”‚   â”œâ”€â”€ critical-fixes.md
-â”‚   â”œâ”€â”€ experimental-plan.md
-â”‚   â””â”€â”€ research-gap.md
-â”œâ”€â”€ results/
-â”‚   â”œâ”€â”€ .gitkeep
-â”‚   â””â”€â”€ reproducibility/
-â”‚       â”œâ”€â”€ critical_fixes_test_report.txt
-â”‚       â”œâ”€â”€ experiment3_late_fallback_overall_summary.csv
-â”‚       â”œâ”€â”€ experiment3_paired_statistical_tests.csv
-â”‚       â””â”€â”€ multi_seed_overall_summary.csv
-â”œâ”€â”€ src/
-â”‚   â”œâ”€â”€ adaptive_controller_v5.py
-â”‚   â”œâ”€â”€ aes_gcm_integration_v5_roundtrip.py
-â”‚   â”œâ”€â”€ analyze_experiment3_statistics.py
-â”‚   â”œâ”€â”€ anomaly_detection_v5_hybrid_confirmation.py
-â”‚   â”œâ”€â”€ key_pool.py
-â”‚   â”œâ”€â”€ late_fallback_audit_experiment3.py
-â”‚   â”œâ”€â”€ multi_seed_robustness_v5_hybrid.py
-â”‚   â”œâ”€â”€ multi_seed_robustness_v5_hybrid_experiment3.py
-â”‚   â”œâ”€â”€ process_physionet.py
-â”‚   â”œâ”€â”€ qkd_simulator.py
-â”‚   â”œâ”€â”€ real_rpm_generator.py
-â”‚   â””â”€â”€ rpm_simulator.py
-â”œâ”€â”€ tests/
-â”‚   â””â”€â”€ test_critical_fixes.py
-â”œâ”€â”€ app.py
-â”œâ”€â”€ .gitignore
-â”œâ”€â”€ README.md
-â””â”€â”€ requirements.txt
+|-- dashboard_data/
+|   |-- aes_gcm_summary.json
+|   |-- isolation_forest_v5_metrics.csv
+|   |-- qkd_generation_508s_v3.csv
+|   `-- v5_vs_v5_if_comparison.csv
+|-- docs/
+|   |-- images/
+|   |   `-- dashboard-preview.png
+|   |-- architecture.md
+|   |-- critical-fixes.md
+|   |-- experimental-plan.md
+|   `-- research-gap.md
+|-- results/
+|   |-- .gitkeep
+|   `-- reproducibility/
+|       |-- critical_fixes_test_report.txt
+|       |-- experiment3_late_fallback_overall_summary.csv
+|       |-- experiment3_paired_statistical_tests.csv
+|       `-- multi_seed_overall_summary.csv
+|-- src/
+|   |-- adaptive_controller_v5.py
+|   |-- aes_gcm_integration_v5_roundtrip.py
+|   |-- analyze_experiment3_statistics.py
+|   |-- anomaly_detection_v5_hybrid_confirmation.py
+|   |-- key_pool.py
+|   |-- late_fallback_audit_experiment3.py
+|   |-- multi_seed_robustness_v5_hybrid.py
+|   |-- multi_seed_robustness_v5_hybrid_experiment3.py
+|   |-- process_physionet.py
+|   |-- qkd_simulator.py
+|   |-- real_rpm_generator.py
+|   `-- rpm_simulator.py
+|-- tests/
+|   `-- test_critical_fixes.py
+|-- app.py
+|-- .gitignore
+|-- README.md
+`-- requirements.txt
 ```
 
 Dataset files, virtual environments, temporary files, and most generated
@@ -491,15 +505,15 @@ evidence of clinical or physical quantum-network validation.
 
 The recorded Experiment 3 summary is:
 
-  Metric                                 Hybrid IF   V5 Baseline
-  ------------------------------------ ----------- -------------
-  Scenario runs                                 50            50
-  Total false fallbacks                          4             5
-  Total missed degradation intervals             0             1
-  IF-triggered fallbacks                        30             0
-  Mean PQC-mode duration                   91.74 s       90.16 s
-  Mean QKD-mode duration                  416.26 s      417.84 s
-  Key accounting valid                         Yes           Yes
+| Metric | Hybrid IF | V5 Baseline |
+|---|---:|---:|
+| Scenario runs | 50 | 50 |
+| Total false fallbacks | 4 | 5 |
+| Total missed degradation intervals | 0 | 1 |
+| IF-triggered fallbacks | 30 | 0 |
+| Mean PQC-mode duration | 91.74 s | 90.16 s |
+| Mean QKD-mode duration | 416.26 s | 417.84 s |
+| Key accounting valid | Yes | Yes |
 
 The 50 scenario runs per controller represent 10 seed bases evaluated
 across five scenarios. They should not be interpreted as 50 independent
@@ -509,15 +523,15 @@ seed replications.
 
 The recorded late-fallback audit summary is:
 
-  Metric                            Hybrid IF   V5 Baseline
-  ------------------------------- ----------- -------------
-  Fallback count                           64            64
-  Original false fallback count             4             5
-  Late fallback count                       0             1
-  Genuine false fallback count              4             4
-  Missed degradation intervals              0             1
-  Late-detected intervals                   0             1
-  Undetected intervals                      0             0
+| Metric | Hybrid IF | V5 Baseline |
+|---|---:|---:|
+| Fallback count | 64 | 64 |
+| Original false fallback count | 4 | 5 |
+| Late fallback count | 0 | 1 |
+| Genuine false fallback count | 4 | 4 |
+| Missed degradation intervals | 0 | 1 |
+| Late-detected intervals | 0 | 1 |
+| Undetected intervals | 0 | 0 |
 
 Under the tested simulated scenarios, the hybrid controller recorded no
 late fallbacks or missed degradation intervals, while the baseline
@@ -541,8 +555,8 @@ For the mean PQC-mode duration difference (Hybrid IF minus V5 baseline):
 
 For mean detected fallback delay:
 
--   Mean difference: approximately âˆ’1.145 seconds.
--   95% confidence interval: approximately \[âˆ’1.561, âˆ’0.729\] seconds.
+-   Mean difference: approximately -1.145 seconds.
+-   95% confidence interval: approximately \[-1.561, -0.729\] seconds.
 -   Holm-adjusted paired t-test p-value: approximately 0.00292.
 -   Holm-adjusted Wilcoxon p-value: 0.140625.
 
