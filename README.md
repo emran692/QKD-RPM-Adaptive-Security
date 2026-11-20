@@ -1,4 +1,4 @@
-# Adaptive QKD–PQC Security Framework for Remote Patient Monitoring
+﻿# Adaptive QKD–PQC Security Framework for Remote Patient Monitoring
 
 **Research Title:** An Adaptive QKD–PQC Security Framework for Remote Patient Monitoring Using Hybrid Anomaly Detection and Key-Pool Management
 
@@ -35,7 +35,34 @@ The framework also includes a hybrid anomaly-detection component that analyses s
 
 QKD and PQC rely on different security assumptions. The fallback mechanism therefore represents a change in the security model rather than an equivalent replacement for QKD.
 
-## 4. Implemented Components
+## 4. Interactive Research Dashboard
+
+The project includes a Streamlit dashboard for viewing selected outputs from the simulation and experimental evaluation workflows.
+
+### Dashboard Preview
+
+![Dashboard overview](docs/images/dashboard-preview.png)
+
+### Run Locally
+
+From the repository root, install the project dependencies and launch the dashboard:
+
+```powershell
+python -m pip install -r requirements.txt
+python -m streamlit run app.py
+```r
+
+The dashboard provides the following views:
+
+- Overview
+- QKD Simulation
+- Anomaly Detection
+- Controller Comparison
+- AES-GCM Evaluation
+
+It reads precomputed experimental outputs from the `dashboard_data/` directory. Public Streamlit Community Cloud deployment has not been confirmed.
+
+## 5. Implemented Components
 
 | Component | Implementation |
 |---|---|
@@ -54,7 +81,7 @@ QKD and PQC rely on different security assumptions. The fallback mechanism there
 
 These components implement simulation and experimental evaluation workflows. Their presence does not establish physical QKD operation, actual PQC key exchange, or clinical deployment.
 
-## 5. Repository Structure
+## 6. Repository Structure
 
 ```text
 QKD-RPM-GitHub/
@@ -97,7 +124,7 @@ QKD-RPM-GitHub/
 
 Dataset files, virtual environments, temporary files, and most generated experiment outputs are excluded from Git. Selected reproducibility evidence is maintained under `results/reproducibility/`.
 
-## 6. Software Requirements
+## 7. Software Requirements
 
 - Python
 - NumPy
@@ -121,7 +148,7 @@ python -m pip install scipy
 
 The versions of the primary dependencies are pinned in `requirements.txt`. SciPy is not currently pinned there. Record the installed package versions when reproducing the statistical analysis.
 
-## 7. PhysioNet Dataset Setup
+## 8. PhysioNet Dataset Setup
 
 The real-data-derived RPM traffic-generation workflow uses the Pulse Transit Time PPG Dataset.
 
@@ -164,7 +191,7 @@ The generated RPM traffic file is an input to the AES-GCM integration experiment
 
 Dataset files are excluded from Git. Obtain the dataset directly from PhysioNet and follow its current licensing, attribution, and citation requirements.
 
-## 8. Experiment Execution
+## 9. Experiment Execution
 
 Run commands from the repository root.
 
@@ -324,7 +351,7 @@ Outputs are saved in:
 
 **Important:** AES-GCM uses independent random placeholder keys. These keys are not derived from the simulated QKD key pool or from an actual PQC key exchange. This experiment validates encryption, decryption, and integrity handling separately from the adaptive controller's key-generation workflow.
 
-## 9. Experimental Results and Reproducibility Evidence
+## 10. Experimental Results and Reproducibility Evidence
 
 Selected experimental evidence is committed to:
 
@@ -408,7 +435,7 @@ The complete paired statistical results, including scenario-wise comparisons, ar
 
 `results/reproducibility/experiment3_paired_statistical_tests.csv`
 
-## 10. Reproducibility Notes
+## 11. Reproducibility Notes
 
 - Run commands from the repository root.
 - Generate required upstream CSV files before running dependent experiments.
@@ -421,7 +448,7 @@ The complete paired statistical results, including scenario-wise comparisons, ar
 - For strict reproduction, use the same scripts, input data, configuration, seed values, and compatible package versions.
 - A committed summary file is evidence of a recorded experiment; it does not independently guarantee that every experiment can be reproduced from a fresh clone without the required input datasets and generated intermediate files.
 
-## 11. Security Model and Research Limitations
+## 12. Security Model and Research Limitations
 
 The following distinctions are important when interpreting the implementation:
 
@@ -434,7 +461,7 @@ The following distinctions are important when interpreting the implementation:
 - **Statistical evidence:** The overall comparison uses 10 seed-level paired observations. The parametric and non-parametric adjusted tests differ in their conclusions, so results require cautious interpretation.
 - **Performance:** Experimental metrics describe the implemented simulation and software test environment. They must not be presented as physical measurements or clinical outcomes.
 
-## 12. Research Integrity
+## 13. Research Integrity
 
 This project is a system-level adaptive security framework, not a new QKD protocol or a production-ready healthcare security implementation.
 

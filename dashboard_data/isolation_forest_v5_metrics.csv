@@ -1,0 +1,2 @@
+total_samples,training_samples,detected_anomalies,true_negatives,false_positives,false_negatives,true_positives,accuracy,precision,recall,f1_score
+508,220,85,423,25,0,60,0.9507874015748031,0.7058823529411765,1.0,0.8275862068965517
