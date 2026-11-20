@@ -1,4 +1,4 @@
-
+﻿
 from pathlib import Path
 import json
 
@@ -431,7 +431,7 @@ with tab1:
         plt.close(fig)
 
         st.markdown("#### Simulation records")
-        st.dataframe(filtered, use_container_width=True, height=300)
+        st.dataframe(filtered, width="stretch", height=300)
 
         st.download_button(
             "Download QKD data",
@@ -534,7 +534,7 @@ with tab3:
     )
 
     if comparison is not None and not comparison.empty:
-        st.dataframe(comparison, use_container_width=True)
+        st.dataframe(comparison, width="stretch")
 
         numeric = comparison.copy()
         numeric["V5_baseline"] = pd.to_numeric(
