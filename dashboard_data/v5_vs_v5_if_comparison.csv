@@ -1,0 +1,10 @@
+metric,V5_baseline,V5_plus_IF
+QKD duration (seconds),442,440
+PQC duration (seconds),66,68
+Fallback count,1,1
+Recovery count,1,1
+QKD successful rekeys,8,8
+Simulated PQC successful rekeys,2,2
+Total successful rekeys,10,10
+Final key pool (bits),30000,30000
+Key accounting valid,True,True
